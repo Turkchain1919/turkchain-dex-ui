@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import WalletButton from "@/components/WalletButton";
 import { contracts } from "@/lib/turkchain";
 import { useWallet } from "@/lib/useWallet";
 import { multicallRead } from "@/lib/multicall";
@@ -97,7 +96,6 @@ export default function PositionsPage() {
       return;
     }
 
-    // unique tokens for symbol/decimals calls
     const tokenSet = new Map<string, Address>();
     for (const p of pairs) {
       tokenSet.set(p.token0.toLowerCase(), p.token0);
@@ -108,7 +106,6 @@ export default function PositionsPage() {
     try {
       setStatus("loading_multicall");
 
-      // 1) symbols + decimals for tokens
       const symCalls = tokens.map((t) => ({
         target: t,
         abi: erc20Abi as any,
@@ -142,7 +139,6 @@ export default function PositionsPage() {
         decMap.set(t.toLowerCase(), dec);
       }
 
-      // 2) per pair: LP balance + reserves
       const pairCalls = pairs.flatMap((p) => [
         {
           target: p.pair,
@@ -169,7 +165,7 @@ export default function PositionsPage() {
         const balOk = pairRes[balIdx]?.ok;
         const resOk = pairRes[resIdx]?.ok;
 
-        const lpBal = balOk ? (pairRes[balIdx].value as any as bigint) : 0n;
+        const lpBal = balOk ? ((pairRes[balIdx].value as any) as bigint) : 0n;
         if (lpBal <= 0n) continue;
 
         let reserve0 = 0n;
@@ -213,39 +209,28 @@ export default function PositionsPage() {
   }, [load]);
 
   return (
-    <main className="min-h-screen bg-[#070A12] text-white overflow-hidden">
-      {/* Background decorations */}
-      <div className="pointer-events-none absolute inset-0">
+    <main className="relative min-h-screen w-full bg-[#070A12] text-white overflow-x-hidden">
+      {/* Background decorations (clipped, no overflow) */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-44 -left-44 h-[520px] w-[520px] rounded-full blur-3xl opacity-30 bg-gradient-to-br from-cyan-400/40 via-blue-500/30 to-fuchsia-500/40" />
         <div className="absolute -bottom-52 -right-52 h-[620px] w-[620px] rounded-full blur-3xl opacity-25 bg-gradient-to-br from-emerald-400/30 via-teal-500/25 to-indigo-500/30" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.06),transparent_40%),radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.05),transparent_45%),radial-gradient(circle_at_60%_85%,rgba(255,255,255,0.04),transparent_45%)]" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-6">
-        {/* Header */}
-        <header className="flex items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg sm:text-xl font-semibold tracking-tight">My Pools</h1>
-            <div className="text-xs sm:text-sm opacity-70 mt-1">
-              Factory: {shortAddr(contracts.factory)}
-            </div>
-            {pairsMeta ? (
-              <>
-                <div className="text-xs sm:text-sm opacity-70 mt-1">
-                  pairs.json updatedAt: {pairsMeta.updatedAt}
-                </div>
-                <div className="text-xs sm:text-sm opacity-70 mt-1">
-                  pairs.json count: {pairsMeta.count}
-                </div>
-              </>
-            ) : null}
-          </div>
-          <WalletButton />
-        </header>
+      {/* Align with top menu (remove big top padding) */}
+      <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 pt-6 pb-6">
+        <div className="mb-5">
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">My Pools</h1>
+          <div className="text-xs sm:text-sm opacity-70 mt-1">Factory: {shortAddr(contracts.factory)}</div>
+          {pairsMeta ? (
+            <>
+              <div className="text-xs sm:text-sm opacity-70 mt-1">pairs.json updatedAt: {pairsMeta.updatedAt}</div>
+              <div className="text-xs sm:text-sm opacity-70 mt-1">pairs.json count: {pairsMeta.count}</div>
+            </>
+          ) : null}
+        </div>
 
-        {/* Nav + controls */}
-        <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
-          {/* Left: controls panel */}
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
           <div className="lg:col-span-4">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_40px_rgba(0,0,0,0.35)] backdrop-blur">
               <div className="flex items-center justify-between gap-3">
@@ -253,27 +238,6 @@ export default function PositionsPage() {
                 <span className="rounded-full bg-white/8 border border-white/12 px-3 py-1 text-xs text-white/80">
                   Multicall
                 </span>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <a
-                  className="rounded-xl border border-white/12 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 transition"
-                  href="/"
-                >
-                  Home
-                </a>
-                <a
-                  className="rounded-xl border border-white/12 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 transition"
-                  href="/swap"
-                >
-                  Swap
-                </a>
-                <a
-                  className="rounded-xl border border-white/12 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 transition"
-                  href="/pool"
-                >
-                  Pool
-                </a>
               </div>
 
               <div className="mt-4 rounded-2xl border border-white/12 bg-black/20 p-4">
@@ -292,9 +256,7 @@ export default function PositionsPage() {
                     Refresh
                   </button>
                 </div>
-                <div className="mt-3 text-xs opacity-70">
-                  Address: {address ? shortAddr(address) : "-"}
-                </div>
+                <div className="mt-3 text-xs opacity-70">Address: {address ? shortAddr(address) : "-"}</div>
               </div>
 
               {status ? (
@@ -303,15 +265,12 @@ export default function PositionsPage() {
                 </div>
               ) : null}
 
-              <div className="mt-4 text-xs opacity-60">
-                Production: /pairs.json + Multicall (aggregate3)
-              </div>
+              <div className="mt-4 text-xs opacity-60">Production: /pairs.json + Multicall (aggregate3)</div>
             </div>
           </div>
 
-          {/* Right: positions list glass card */}
           <div className="lg:col-span-8">
-            <div className="relative">
+            <div className="relative overflow-hidden rounded-[28px]">
               <div className="pointer-events-none absolute -inset-6 rounded-[28px] bg-gradient-to-br from-white/10 via-white/5 to-transparent blur-2xl" />
               <div className="pointer-events-none absolute -top-10 right-6 h-48 w-48 rounded-full bg-cyan-400/20 blur-3xl" />
               <div className="pointer-events-none absolute bottom-0 left-10 h-56 w-56 rounded-full bg-fuchsia-400/15 blur-3xl" />
@@ -322,12 +281,8 @@ export default function PositionsPage() {
 
                 <div className="relative p-5 sm:p-7">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-sm sm:text-base font-medium opacity-90">
-                      Positions
-                    </div>
-                    <div className="text-xs opacity-70">
-                      {rows.length} item
-                    </div>
+                    <div className="text-sm sm:text-base font-medium opacity-90">Positions</div>
+                    <div className="text-xs opacity-70">{rows.length} item</div>
                   </div>
 
                   <div className="mt-4 space-y-3">
@@ -376,19 +331,11 @@ export default function PositionsPage() {
                   ) : null}
                 </div>
               </div>
-
-              <div className="pointer-events-none absolute -right-2 top-10 hidden lg:block">
-                <div className="rounded-2xl border border-white/12 bg-white/7 px-4 py-3 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.4)]">
-                  <div className="text-xs opacity-70">Wallet</div>
-                  <div className="mt-1 text-sm font-medium">{address ? shortAddr(address) : "-"}</div>
-                </div>
-              </div>
             </div>
           </div>
         </section>
 
-        {/* Footer social */}
-        <footer className="mt-10 flex items-center justify-between">
+        <footer className="mt-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <a
               href="#"

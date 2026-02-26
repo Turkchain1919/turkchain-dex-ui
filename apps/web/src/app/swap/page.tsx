@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import WalletButton from "@/components/WalletButton";
 import { contracts } from "@/lib/turkchain";
 import { erc20Abi, routerV2Abi } from "@/lib/abis";
 import { publicClient, getWalletClient } from "@/lib/evm";
@@ -76,7 +75,6 @@ function formatAllowance(allow: bigint | null, decimals: number) {
   return formatUnits(allow, decimals);
 }
 
-// UniswapV2 amountOut formula (fee 0.3% -> 997/1000)
 function calcAmountOut(amountIn: bigint, reserveIn: bigint, reserveOut: bigint) {
   if (amountIn <= 0n) return 0n;
   if (reserveIn <= 0n || reserveOut <= 0n) return 0n;
@@ -114,7 +112,7 @@ export default function SwapPage() {
   const [balOut, setBalOut] = React.useState<bigint | null>(null);
   const [allowIn, setAllowIn] = React.useState<bigint | null>(null);
 
-  const [slippageBps, setSlippageBps] = React.useState(100); // 1.00%
+  const [slippageBps, setSlippageBps] = React.useState(100);
   const [useMaxApproval, setUseMaxApproval] = React.useState(true);
 
   const [minOut, setMinOut] = React.useState<bigint | null>(null);
@@ -122,6 +120,7 @@ export default function SwapPage() {
   const [routePath, setRoutePath] = React.useState<Address[] | null>(null);
 
   const WTC: Address = "0xa1aCbf1244fBb5cabB0b2ef2c2bB40Dbf89a4794";
+
   const [isQuoting, setIsQuoting] = React.useState<boolean>(false);
   const [confirmHighImpact, setConfirmHighImpact] = React.useState<boolean>(false);
 
@@ -230,7 +229,7 @@ export default function SwapPage() {
             bestPath = path;
           }
         } catch {
-          // ignore path errors
+          // ignore
         }
       }
 
@@ -286,86 +285,6 @@ export default function SwapPage() {
         const outModel = calcAmountOut(amountIn, reserveIn, reserveOut);
         const pibps = calcPriceImpactBps(amountIn, outModel, reserveIn, reserveOut);
         setPriceImpactBps(pibps);
-        return;
-      }
-
-      if (bestPath.length === 3) {
-        const a = bestPath[0];
-        const b = bestPath[1];
-        const c = bestPath[2];
-
-        const [pair1, pair2] = await Promise.all([
-          publicClient.readContract({ address: contracts.factory, abi: factoryAbi, functionName: "getPair", args: [a, b] }) as Promise<Address>,
-          publicClient.readContract({ address: contracts.factory, abi: factoryAbi, functionName: "getPair", args: [b, c] }) as Promise<Address>
-        ]);
-
-        if (!pair1 || pair1.toLowerCase() === zeroAddress || !pair2 || pair2.toLowerCase() === zeroAddress) {
-          setPriceImpactBps(null);
-          return;
-        }
-
-        const [[t0a, t1a, ra], [t0b, t1b, rb]] = await Promise.all([
-          Promise.all([
-            publicClient.readContract({ address: pair1, abi: pairAbi, functionName: "token0" }) as Promise<Address>,
-            publicClient.readContract({ address: pair1, abi: pairAbi, functionName: "token1" }) as Promise<Address>,
-            publicClient.readContract({ address: pair1, abi: pairAbi, functionName: "getReserves" }) as Promise<readonly [bigint, bigint, number]>
-          ]),
-          Promise.all([
-            publicClient.readContract({ address: pair2, abi: pairAbi, functionName: "token0" }) as Promise<Address>,
-            publicClient.readContract({ address: pair2, abi: pairAbi, functionName: "token1" }) as Promise<Address>,
-            publicClient.readContract({ address: pair2, abi: pairAbi, functionName: "getReserves" }) as Promise<readonly [bigint, bigint, number]>
-          ])
-        ]);
-
-        const r0a = BigInt(ra[0]);
-        const r1a = BigInt(ra[1]);
-        const r0b = BigInt(rb[0]);
-        const r1b = BigInt(rb[1]);
-
-        let rIn1 = 0n, rOut1 = 0n;
-        if (a.toLowerCase() === t0a.toLowerCase() && b.toLowerCase() === t1a.toLowerCase()) {
-          rIn1 = r0a; rOut1 = r1a;
-        } else if (a.toLowerCase() === t1a.toLowerCase() && b.toLowerCase() === t0a.toLowerCase()) {
-          rIn1 = r1a; rOut1 = r0a;
-        } else {
-          setPriceImpactBps(null);
-          return;
-        }
-
-        let rIn2 = 0n, rOut2 = 0n;
-        if (b.toLowerCase() === t0b.toLowerCase() && c.toLowerCase() === t1b.toLowerCase()) {
-          rIn2 = r0b; rOut2 = r1b;
-        } else if (b.toLowerCase() === t1b.toLowerCase() && c.toLowerCase() === t0b.toLowerCase()) {
-          rIn2 = r1b; rOut2 = r0b;
-        } else {
-          setPriceImpactBps(null);
-          return;
-        }
-
-        if (rIn1 <= 0n || rOut1 <= 0n || rIn2 <= 0n || rOut2 <= 0n) {
-          setPriceImpactBps(null);
-          return;
-        }
-
-        const out1 = calcAmountOut(amountIn, rIn1, rOut1);
-        const out2 = calcAmountOut(out1, rIn2, rOut2);
-
-        const scale = 1000000000000000000n;
-        const execScaled = (out2 * scale) / amountIn;
-        const midScaled = (((rOut1 * rOut2) * scale) / (rIn1 * rIn2));
-
-        if (midScaled <= 0n) {
-          setPriceImpactBps(null);
-          return;
-        }
-
-        let pibps = 0n;
-        if (midScaled > execScaled) {
-          pibps = ((midScaled - execScaled) * 10000n) / midScaled;
-        }
-
-        const pibpsNum = Number(pibps);
-        setPriceImpactBps(Number.isFinite(pibpsNum) ? pibpsNum : null);
         return;
       }
 
@@ -456,9 +375,9 @@ export default function SwapPage() {
       const wc = getWalletClient();
       if (!wc) return setStatus("no_wallet_client");
 
-      const path: Address[] = (routePath && routePath.length >= 2)
+      const path: Address[] = routePath && routePath.length >= 2
         ? routePath
-        : [inToken.address as Address, outToken!.address as Address];
+        : [inToken.address as Address, outToken.address as Address];
 
       setIsPending(true);
       setStatus("swapping");
@@ -546,51 +465,21 @@ export default function SwapPage() {
   }, [status]);
 
   return (
-    <main className="min-h-screen bg-[#070A12] text-white overflow-hidden">
-      {/* Background decorations (same language as Home) */}
-      <div className="pointer-events-none absolute inset-0">
+    <main className="relative min-h-screen w-full bg-[#070A12] text-white overflow-x-hidden">
+      {/* Background decorations */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-44 -left-44 h-[520px] w-[520px] rounded-full blur-3xl opacity-30 bg-gradient-to-br from-cyan-400/40 via-blue-500/30 to-fuchsia-500/40" />
         <div className="absolute -bottom-52 -right-52 h-[620px] w-[620px] rounded-full blur-3xl opacity-25 bg-gradient-to-br from-emerald-400/30 via-teal-500/25 to-indigo-500/30" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.06),transparent_40%),radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.05),transparent_45%),radial-gradient(circle_at_60%_85%,rgba(255,255,255,0.04),transparent_45%)]" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-6">
-        {/* Top header */}
-        <header className="flex items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Swap</h1>
-            <div className="mt-1 text-xs opacity-70">
-              Router: {shortAddr(contracts.router)}
-            </div>
-          </div>
-          <WalletButton />
-        </header>
-
-        {/* Nav */}
-        <div className="mt-5 flex flex-wrap gap-2">
-          <a
-            className="rounded-xl border border-white/12 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 transition"
-            href="/"
-          >
-            Home
-          </a>
-          <a
-            className="rounded-xl border border-white/12 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 transition"
-            href="/pool"
-          >
-            Pool
-          </a>
-          <a
-            className="rounded-xl border border-white/12 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 transition"
-            href="/positions"
-          >
-            My Pools
-          </a>
+      <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 py-6">
+        <div className="mb-6">
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Swap</h1>
+          <div className="mt-1 text-xs opacity-70">Router: {shortAddr(contracts.router)}</div>
         </div>
 
-        {/* Layout */}
-        <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
-          {/* Left: small info / live chip / helper */}
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
           <div className="lg:col-span-4">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_40px_rgba(0,0,0,0.35)] backdrop-blur">
               <div className="flex items-center justify-between gap-3">
@@ -623,26 +512,21 @@ export default function SwapPage() {
                 Refresh
               </button>
 
-              <div className="mt-4 text-xs opacity-60">
-                Not: Token cekimi ve swap mantigi ayni. Bu alan sadece UI.
-              </div>
+              <div className="mt-4 text-xs opacity-60">Note: UI only.</div>
             </div>
           </div>
 
-          {/* Right: glass swap card */}
           <div className="lg:col-span-8">
-            <div className="relative">
-              {/* 3D glass layers */}
-              <div className="pointer-events-none absolute -inset-6 rounded-[28px] bg-gradient-to-br from-white/10 via-white/5 to-transparent blur-2xl" />
+            <div className="relative overflow-hidden">
+              <div className="pointer-events-none absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/10 via-white/5 to-transparent blur-2xl" />
               <div className="pointer-events-none absolute -top-10 right-6 h-48 w-48 rounded-full bg-cyan-400/20 blur-3xl" />
               <div className="pointer-events-none absolute bottom-0 left-10 h-56 w-56 rounded-full bg-fuchsia-400/15 blur-3xl" />
 
-              <div className="relative rounded-[28px] border border-white/15 bg-white/7 shadow-[0_18px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+              <div className="relative rounded-[28px] border border-white/15 bg-white/7 shadow-[0_18px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl overflow-hidden">
                 <div className="pointer-events-none absolute inset-0 rounded-[28px] opacity-35 [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:22px_22px]" />
                 <div className="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-white/10" />
 
                 <div className="relative p-5 sm:p-7">
-                  {/* Token selects */}
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div className="rounded-2xl border border-white/12 bg-black/20 p-4">
                       <label className="text-xs opacity-70">From</label>
@@ -694,7 +578,6 @@ export default function SwapPage() {
                     </div>
                   </div>
 
-                  {/* Amount + settings */}
                   <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
                     <div className="lg:col-span-2 rounded-2xl border border-white/12 bg-black/20 p-4">
                       <label className="text-xs opacity-70">Amount In</label>
@@ -728,7 +611,6 @@ export default function SwapPage() {
                     </div>
                   </div>
 
-                  {/* Metrics */}
                   <div className="mt-4 rounded-2xl border border-white/12 bg-white/5 p-4 text-sm">
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div className="opacity-85">
@@ -760,7 +642,6 @@ export default function SwapPage() {
                     </div>
                   </div>
 
-                  {/* Actions */}
                   <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                     <button
                       className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 transition"
@@ -799,7 +680,6 @@ export default function SwapPage() {
                     </button>
                   </div>
 
-                  {/* Tx + Status */}
                   {txHash ? (
                     <div className="mt-4 rounded-2xl border border-white/12 bg-black/20 p-3 text-xs opacity-85">
                       Tx:{" "}
@@ -817,8 +697,7 @@ export default function SwapPage() {
                 </div>
               </div>
 
-              {/* small floating chip (3D accent) */}
-              <div className="pointer-events-none absolute -right-2 top-10 hidden lg:block">
+              <div className="pointer-events-none absolute right-4 top-10 hidden lg:block">
                 <div className="rounded-2xl border border-white/12 bg-white/7 px-4 py-3 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.4)]">
                   <div className="text-xs opacity-70">Explorer</div>
                   <div className="mt-1 text-sm font-medium">turkscan.com</div>
@@ -828,8 +707,8 @@ export default function SwapPage() {
           </div>
         </section>
 
-        {/* Footer social (same style language) */}
-        <footer className="mt-10 flex items-center justify-between">
+        {/* Footer (kept small to avoid extra scroll) */}
+        <footer className="mt-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <a
               href="#"

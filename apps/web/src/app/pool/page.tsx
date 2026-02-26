@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import WalletButton from "@/components/WalletButton";
 import { contracts } from "@/lib/turkchain";
 import { erc20Abi, pairAbi, routerV2Abi, factoryAbi } from "@/lib/abis";
 import { formatUnits, parseUnits, type Address, zeroAddress, isAddress } from "viem";
@@ -25,12 +24,7 @@ async function fetchTokenInfo(addr: Address): Promise<TokenInfo> {
   const symbol = typeof sym === "string" && sym.length ? sym : addr.slice(0, 6) + "..." + addr.slice(-4);
   const decimals = Number(dec) || 18;
 
-  return {
-    chainId: 1919,
-    address: addr,
-    symbol,
-    decimals
-  };
+  return { chainId: 1919, address: addr, symbol, decimals };
 }
 
 export default function PoolPage() {
@@ -69,7 +63,6 @@ export default function PoolPage() {
 
   const [removePct, setRemovePct] = React.useState(25);
 
-  // Load token list + seed from URL
   React.useEffect(() => {
     (async () => {
       try {
@@ -80,7 +73,6 @@ export default function PoolPage() {
         const qA = sp.get("tokenA");
         const qB = sp.get("tokenB");
 
-        // If pair is pinned: read token0/token1 from pair and lock selectors
         if (qPair && isAddress(qPair)) {
           const pinned = qPair as Address;
           setPair(pinned);
@@ -112,7 +104,6 @@ export default function PoolPage() {
           return;
         }
 
-        // Non pinned mode: seed tokenA/tokenB from tokenA/tokenB query
         if (qA && isAddress(qA)) {
           const t = list.find((x) => x.address.toLowerCase() === qA.toLowerCase());
           if (t) setTokenA(t);
@@ -122,7 +113,6 @@ export default function PoolPage() {
           if (t) setTokenB(t);
         }
 
-        // Default if none
         if (!qA && !qB && list.length >= 2) {
           setTokenA(list[0]);
           setTokenB(list[1]);
@@ -134,7 +124,6 @@ export default function PoolPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Resolve pair from factory (only if NOT pinned)
   React.useEffect(() => {
     (async () => {
       try {
@@ -304,16 +293,7 @@ export default function PoolPage() {
         address: contracts.router,
         abi: routerV2Abi,
         functionName: "addLiquidity",
-        args: [
-          tokenA.address,
-          tokenB.address,
-          amountADesired,
-          amountBDesired,
-          amountAMin,
-          amountBMin,
-          address as Address,
-          deadline
-        ],
+        args: [tokenA.address, tokenB.address, amountADesired, amountBDesired, amountAMin, amountBMin, address as Address, deadline],
         account: address as Address
       });
 
@@ -378,15 +358,7 @@ export default function PoolPage() {
         address: contracts.router,
         abi: routerV2Abi,
         functionName: "removeLiquidity",
-        args: [
-          tokenA.address,
-          tokenB.address,
-          liquidity,
-          amountAMin,
-          amountBMin,
-          address as Address,
-          deadline
-        ],
+        args: [tokenA.address, tokenB.address, liquidity, amountAMin, amountBMin, address as Address, deadline],
         account: address as Address
       });
 
@@ -401,32 +373,23 @@ export default function PoolPage() {
   }
 
   const poolLabel = tokenA && tokenB ? `${tokenA.symbol} / ${tokenB.symbol}` : "Pool";
-
-  const lpSharePct =
-    lpBal && lpTotal && lpTotal > 0n ? Number((lpBal * 10000n) / lpTotal) / 100 : null;
+  const lpSharePct = lpBal && lpTotal && lpTotal > 0n ? Number((lpBal * 10000n) / lpTotal) / 100 : null;
 
   return (
-    <main className="min-h-screen bg-[#070A12] text-white overflow-hidden">
-      {/* Background decorations */}
+    <main className="relative w-screen min-h-screen overflow-x-hidden bg-[#070A12] text-white">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-44 -left-44 h-[520px] w-[520px] rounded-full blur-3xl opacity-30 bg-gradient-to-br from-cyan-400/40 via-blue-500/30 to-fuchsia-500/40" />
         <div className="absolute -bottom-52 -right-52 h-[620px] w-[620px] rounded-full blur-3xl opacity-25 bg-gradient-to-br from-emerald-400/30 via-teal-500/25 to-indigo-500/30" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.06),transparent_40%),radial-gradient(circle_at_80%_30%,rgba(255,255,255,0.05),transparent_45%),radial-gradient(circle_at_60%_85%,rgba(255,255,255,0.04),transparent_45%)]" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 py-6">
-        {/* Header */}
-        <header className="flex items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Pool</h1>
-            <div className="mt-1 text-xs opacity-70">{poolLabel}</div>
-          </div>
-          <WalletButton />
-        </header>
+      <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 py-6">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-lg sm:text-xl font-semibold tracking-tight">Pool</h1>
+          <div className="mt-1 text-xs opacity-70">{poolLabel}</div>
+        </div>
 
-        {/* Content grid */}
-        <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
-          {/* Left: info */}
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
           <div className="lg:col-span-4">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_40px_rgba(0,0,0,0.35)] backdrop-blur">
               <div className="flex items-center justify-between gap-3">
@@ -488,15 +451,12 @@ export default function PoolPage() {
                 </button>
               </div>
 
-              <div className="mt-4 text-xs opacity-60">
-                Router: {contracts.router}
-              </div>
+              <div className="mt-4 text-xs opacity-60">Router: {contracts.router}</div>
             </div>
           </div>
 
-          {/* Right: glass main card */}
           <div className="lg:col-span-8">
-            <div className="relative">
+            <div className="relative overflow-hidden">
               <div className="pointer-events-none absolute -inset-6 rounded-[28px] bg-gradient-to-br from-white/10 via-white/5 to-transparent blur-2xl" />
               <div className="pointer-events-none absolute -top-10 right-6 h-48 w-48 rounded-full bg-cyan-400/20 blur-3xl" />
               <div className="pointer-events-none absolute bottom-0 left-10 h-56 w-56 rounded-full bg-fuchsia-400/15 blur-3xl" />
@@ -506,7 +466,6 @@ export default function PoolPage() {
                 <div className="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-white/10" />
 
                 <div className="relative p-5 sm:p-7">
-                  {/* Token selectors */}
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <div className="rounded-2xl border border-white/12 bg-black/20 p-4">
                       <label className="text-xs opacity-70">Token A</label>
@@ -559,16 +518,13 @@ export default function PoolPage() {
                     </div>
                   </div>
 
-                  {/* Reserves */}
                   {pair && reserveA !== null && reserveB !== null && tokenA && tokenB ? (
                     <div className="mt-4 rounded-2xl border border-white/12 bg-white/5 p-4 text-sm">
                       <div className="opacity-85">
                         Reserves: {formatUnits(reserveA, tokenA.decimals)} {tokenA.symbol} /{" "}
                         {formatUnits(reserveB, tokenB.decimals)} {tokenB.symbol}
                       </div>
-                      {lpSharePct !== null ? (
-                        <div className="mt-1 opacity-85">Your LP share: ~{lpSharePct}%</div>
-                      ) : null}
+                      {lpSharePct !== null ? <div className="mt-1 opacity-85">Your LP share: ~{lpSharePct}%</div> : null}
                       {token0 ? <div className="mt-2 text-xs opacity-70">Pair token0: {token0}</div> : null}
                     </div>
                   ) : (
@@ -577,7 +533,6 @@ export default function PoolPage() {
                     </div>
                   )}
 
-                  {/* Slippage */}
                   <div className="mt-4 rounded-2xl border border-white/12 bg-black/20 p-4">
                     <label className="text-xs opacity-70">Slippage (%)</label>
                     <input
@@ -591,7 +546,6 @@ export default function PoolPage() {
                     />
                   </div>
 
-                  {/* Tab content */}
                   <div className="mt-4 space-y-3">
                     {tab === "ADD" ? (
                       <>
@@ -609,9 +563,7 @@ export default function PoolPage() {
                         </div>
 
                         <div className="rounded-2xl border border-white/12 bg-black/20 p-4">
-                          <label className="text-xs opacity-70">
-                            Amount B ({tokenB?.symbol ?? "TokenB"}) (auto)
-                          </label>
+                          <label className="text-xs opacity-70">Amount B ({tokenB?.symbol ?? "TokenB"}) (auto)</label>
                           <input
                             className="mt-2 w-full rounded-xl border border-white/12 bg-white/5 px-3 py-2 text-sm outline-none"
                             value={amountBStr || computeBfromA(amountAStr)}
@@ -649,7 +601,6 @@ export default function PoolPage() {
                     )}
                   </div>
 
-                  {/* Status */}
                   {status ? (
                     <div className="mt-4 rounded-2xl border border-white/12 bg-black/20 p-3 text-xs opacity-85">
                       Status: {status}
@@ -658,7 +609,7 @@ export default function PoolPage() {
                 </div>
               </div>
 
-              <div className="pointer-events-none absolute -right-2 top-10 hidden lg:block">
+              <div className="pointer-events-none absolute right-3 top-10 hidden lg:block">
                 <div className="rounded-2xl border border-white/12 bg-white/7 px-4 py-3 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.4)]">
                   <div className="text-xs opacity-70">Pair</div>
                   <div className="mt-1 text-xs font-medium opacity-90">{pair ? pair : "-"}</div>
@@ -668,8 +619,7 @@ export default function PoolPage() {
           </div>
         </section>
 
-        {/* Footer social */}
-        <footer className="mt-10 flex items-center justify-between">
+        <footer className="mt-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <a
               href="#"

@@ -6,9 +6,9 @@
     {
       "chainId": 1919,
       "address": "0xa1aCbf1244fBb5cabB0b2ef2c2bB40Dbf89a4794",
-      "symbol": "WTC",
+      "symbol": "TC",
       "decimals": 18,
-      "name": "Wrapped Turk",
+      "name": "Turk",
       "logoURI": "https://raw.githubusercontent.com/Turkchain1919/turkchain-dex-ui/main/tokenlists/logos/1919/0xa1aCbf1244fBb5cabB0b2ef2c2bB40Dbf89a4794/logo.png"
     },
     {

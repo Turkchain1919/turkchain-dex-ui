@@ -4,8 +4,8 @@ import { createPublicClient, http, decodeFunctionResult, encodeFunctionData, zer
 
 const CHAIN_ID = 1919;
 const RPC_URL = "https://rpc.turkchain1919.com";
-const FACTORY = "0xCb8A04a9Cd9a0Cbdf7E4f9f23caA4d206e98aef7";
-const MULTICALL = "0x03a37156c217F4a7eB5Dcd1B668436d45B29aF24";
+const FACTORY = "0x53f1c333A5789854b3806d2bdA7f2860b2E55E6c";
+const MULTICALL = "0x37Cb39117BdD2B1A5414279f029eB6D181C4DB68";
 
 const factoryAbi = [
   {

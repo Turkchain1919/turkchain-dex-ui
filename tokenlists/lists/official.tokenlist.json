@@ -5,11 +5,11 @@
   "tokens": [
     {
       "chainId": 1919,
-      "address": "0xa1aCbf1244fBb5cabB0b2ef2c2bB40Dbf89a4794",
+      "address": "0x4b62EdE2C70f019Cb7731d1586bB13F065728DfE",
       "symbol": "TC",
       "decimals": 18,
       "name": "Turk",
-      "logoURI": "https://raw.githubusercontent.com/Turkchain1919/turkchain-dex-ui/main/tokenlists/logos/1919/0xa1aCbf1244fBb5cabB0b2ef2c2bB40Dbf89a4794/logo.png"
+      "logoURI": "https://raw.githubusercontent.com/Turkchain1919/turkchain-dex-ui/main/tokenlists/logos/1919/0x4b62EdE2C70f019Cb7731d1586bB13F065728DfE/logo.png"
     },
     {
       "chainId": 1919,

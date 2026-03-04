@@ -6,9 +6,9 @@
     {
       "chainId": 1919,
       "address": "0x4b62EdE2C70f019Cb7731d1586bB13F065728DfE",
-      "symbol": "TC",
+      "symbol": "TURK",
       "decimals": 18,
-      "name": "Turk",
+      "name": "TC",
       "logoURI": "https://raw.githubusercontent.com/Turkchain1919/turkchain-dex-ui/main/tokenlists/logos/1919/0x4b62EdE2C70f019Cb7731d1586bB13F065728DfE/logo.png"
     },
     {

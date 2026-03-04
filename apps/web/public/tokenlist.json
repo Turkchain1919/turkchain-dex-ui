@@ -4,8 +4,8 @@
   "tokens": [
     {
       "chainId": 1919,
-      "address": "0xa1aCbf1244fBb5cabB0b2ef2c2bB40Dbf89a4794",
-      "symbol": "WTC",
+      "address": "0x4b62EdE2C70f019Cb7731d1586bB13F065728DfE",
+      "symbol": "TURK",
       "decimals": 18,
       "name": "Wrapped Turk"
     },
